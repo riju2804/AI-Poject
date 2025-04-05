@@ -1,0 +1,118 @@
+project_root/
+├── app.py
+├── requirements.txt
+├── templates/
+│   └── index.html
+└── static/
+    ├── style.css
+    └── script.js
+
+# app.py
+from flask import Flask, request, jsonify, render_template
+
+app = Flask(__name__)
+
+def get_parenting_tip(query):
+    query = query.lower()
+    if "infant" in query or "0-2" in query:
+        return "For infants, always respond promptly to cries and ensure proper sleep and nutrition."
+    elif "toddler" in query or "3-5" in query:
+        return "Toddlers thrive on routine. Positive reinforcement helps guide good behavior."
+    elif "teen" in query or "13-19" in query:
+        return "For teenagers, maintain open communication and respect their growing independence."
+    elif "discipline" in query:
+        return "Discipline should be consistent and age-appropriate. Avoid harsh punishment."
+    elif "screen time" in query:
+        return "Limit screen time to no more than 1 hour for young children and encourage physical activities."
+    else:
+        return "Parenting is a journey. Focus on love, patience, and open communication."
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/get-tip', methods=['POST'])
+def get_tip():
+    user_input = request.json['message']
+    response = get_parenting_tip(user_input)
+    return jsonify({'response': response})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+# requirements.txt
+Flask==2.3.3
+
+# templates/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parenting Tips Bot</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chatbox">
+        <h2>Parenting Tips Bot</h2>
+        <div id="chat"></div>
+        <input type="text" id="userInput" placeholder="Ask a parenting question...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
+
+# static/style.css
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+
+.chatbox {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 15px;
+    width: 400px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#chat {
+    height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+# static/script.js
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    const chat = document.getElementById('chat');
+    const message = input.value;
+
+    if (!message.trim()) return;
+
+    chat.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+    input.value = "";
+
+    fetch('/get-tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        chat.innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
+        chat.scrollTop = chat.scrollHeight;
+    });
+}
